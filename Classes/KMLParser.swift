@@ -36,16 +36,16 @@ import MapKit
 // Convert a KML coordinate list string to a C array of CLLocationCoordinate2Ds.
 // KML coordinate lists are longitude,latitude[,altitude] tuples specified by whitespace.
 extension CLLocationCoordinate2D {
-    static func strToCoords(str: String) -> [CLLocationCoordinate2D] {
+    static func strToCoords(_ str: String) -> [CLLocationCoordinate2D] {
         var coords: [CLLocationCoordinate2D] = []
         coords.reserveCapacity(10)
         
-        let tuples = str.componentsSeparatedByCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet())
+        let tuples = str.components(separatedBy: CharacterSet.whitespacesAndNewlines)
         for tuple in tuples {
             
             var lat: Double = 0.0, lon: Double = 0.0
-            let scanner = NSScanner(string: tuple)
-            scanner.charactersToBeSkipped = NSCharacterSet(charactersInString: ",")
+            let scanner = Scanner(string: tuple)
+            scanner.charactersToBeSkipped = CharacterSet(charactersIn: ",")
             var success = scanner.scanDouble(&lon)
             if success {
                 success = scanner.scanDouble(&lat)
@@ -63,14 +63,14 @@ extension CLLocationCoordinate2D {
 }
 
 
-class KMLParser: NSObject, NSXMLParserDelegate {
-    private var _styles: [String: KMLStyle] = [:]
-    private var _placemarks: [KMLPlacemark] = []
+class KMLParser: NSObject, XMLParserDelegate {
+    fileprivate var _styles: [String: KMLStyle] = [:]
+    fileprivate var _placemarks: [KMLPlacemark] = []
     
-    private var _placemark: KMLPlacemark?
-    private var _style: KMLStyle?
+    fileprivate var _placemark: KMLPlacemark?
+    fileprivate var _style: KMLStyle?
     
-    private var _xmlParser: NSXMLParser!
+    fileprivate var _xmlParser: XMLParser!
     
     // After parsing has completed, this method loops over all placemarks that have
     // been parsed and looks up their corresponding KMLStyle objects according to
@@ -79,7 +79,7 @@ class KMLParser: NSObject, NSXMLParserDelegate {
         for placemark in _placemarks {
             if placemark.style == nil, let styleUrl = placemark.styleUrl {
                 if styleUrl.hasPrefix("#") {
-                    let styleID = styleUrl.substringFromIndex(styleUrl.startIndex.advancedBy(1))
+                    let styleID = styleUrl.substring(from: styleUrl.characters.index(styleUrl.startIndex, offsetBy: 1))
                     let style = _styles[styleID]
                     placemark.style = style
                 }
@@ -87,8 +87,8 @@ class KMLParser: NSObject, NSXMLParserDelegate {
         }
     }
     
-    init(URL: NSURL) {
-        _xmlParser = NSXMLParser(contentsOfURL: URL)
+    init(url: URL) {
+        _xmlParser = XMLParser(contentsOf: url)
         super.init()
         
         _xmlParser.delegate = self
@@ -112,7 +112,7 @@ class KMLParser: NSObject, NSXMLParserDelegate {
         return _placemarks.flatMap{$0.point}
     }
     
-    func viewForAnnotation(point: MKAnnotation) -> MKAnnotationView? {
+    func viewForAnnotation(_ point: MKAnnotation) -> MKAnnotationView? {
         // Find the KMLPlacemark object that owns this point and get
         // the view from it.
         for placemark in _placemarks {
@@ -123,7 +123,7 @@ class KMLParser: NSObject, NSXMLParserDelegate {
         return nil
     }
     
-    func rendererForOverlay(overlay: MKOverlay) -> MKOverlayRenderer? {
+    func rendererForOverlay(_ overlay: MKOverlay) -> MKOverlayRenderer? {
         // Find the KMLPlacemark object that owns this overlay and get
         // the view from it.
         for placemark in _placemarks {
@@ -136,7 +136,7 @@ class KMLParser: NSObject, NSXMLParserDelegate {
     
     //MARK: NSXMLParserDelegate
     
-    func parser(parser: NSXMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String]) {
+    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String]) {
         let ident = attributeDict["id"]
         
         let style = _placemark?.style ?? _style
@@ -187,7 +187,7 @@ class KMLParser: NSObject, NSXMLParserDelegate {
         }
     }
     
-    func parser(parser: NSXMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
+    func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
         let style = _placemark?.style ?? _style
         
         // Style and sub-elements
@@ -241,7 +241,7 @@ class KMLParser: NSObject, NSXMLParserDelegate {
         
     }
     
-    func parser(parser: NSXMLParser, foundCharacters string: String) {
+    func parser(_ parser: XMLParser, foundCharacters string: String) {
         let element = _placemark ?? _style
         element?.addString(string)
     }
@@ -252,7 +252,7 @@ struct ELTYPE {
     init(_ typeName: String) {self.typeName = typeName}
 }
 func ~= (lhs: ELTYPE, rhs: String) -> Bool {
-    return rhs.caseInsensitiveCompare(lhs.typeName) == .OrderedSame
+    return rhs.caseInsensitiveCompare(lhs.typeName) == .orderedSame
 }
 
 // Begin the implementations of KMLElement and subclasses.  These objects
@@ -262,7 +262,7 @@ func ~= (lhs: ELTYPE, rhs: String) -> Bool {
 
 class KMLElement: NSObject {
     let identifier: String?
-    private var accum: String = ""
+    fileprivate var accum: String = ""
     
     init(identifier ident: String?) {
         self.identifier = ident
@@ -277,7 +277,7 @@ class KMLElement: NSObject {
     }
     
     // Add character data parsed from the xml
-    func addString(str: String) {
+    func addString(_ str: String) {
         if self.canAddString {
             accum += str
         }
@@ -294,14 +294,14 @@ class KMLElement: NSObject {
 // at the top level of the KML document with identifiers or they may be
 // specified anonymously within a Geometry element.
 class KMLStyle: KMLElement {
-    private var strokeColor: UIColor?
-    private var strokeWidth: CGFloat = 0.0
-    private var fillColor: UIColor?
+    fileprivate var strokeColor: UIColor?
+    fileprivate var strokeWidth: CGFloat = 0.0
+    fileprivate var fillColor: UIColor?
     
-    private var fill: Bool = false
-    private var stroke: Bool = false
+    fileprivate var fill: Bool = false
+    fileprivate var stroke: Bool = false
     
-    private struct Flags: OptionSetType {
+    fileprivate struct Flags: OptionSet {
         var rawValue: Int32
         init(rawValue: Int32) {self.rawValue = rawValue}
         static let inLineStyle = Flags(rawValue: 1<<0)
@@ -312,10 +312,10 @@ class KMLStyle: KMLElement {
         static let inFill = Flags(rawValue: 1<<4)
         static let inOutline = Flags(rawValue: 1<<5)
     }
-    private var flags: Flags = Flags(rawValue: 0)
+    fileprivate var flags: Flags = Flags(rawValue: 0)
     
     override var canAddString: Bool {
-        return flags.intersect([.inColor, .inWidth, .inFill, .inOutline]) != []
+        return flags.intersection([.inColor, .inWidth, .inFill, .inOutline]) != []
     }
     
     func beginLineStyle() {
@@ -379,7 +379,7 @@ class KMLStyle: KMLElement {
         self.clearString()
     }
     
-    func applyToOverlayPathRenderer(renderer: MKOverlayPathRenderer) {
+    func applyToOverlayPathRenderer(_ renderer: MKOverlayPathRenderer) {
         renderer.strokeColor = strokeColor
         renderer.fillColor = fillColor
         renderer.lineWidth = strokeWidth
@@ -388,13 +388,13 @@ class KMLStyle: KMLElement {
 }
 
 class KMLGeometry: KMLElement {
-    private struct Flags: OptionSetType {
+    fileprivate struct Flags: OptionSet {
         var rawValue: Int32
         init(rawValue: Int32) {self.rawValue = rawValue}
         
         static let inCoords = Flags(rawValue: 1<<0)
     }
-    private var flags: Flags = Flags(rawValue: 0)
+    fileprivate var flags: Flags = Flags(rawValue: 0)
     
     override var canAddString: Bool {
         return flags.contains(.inCoords)
@@ -416,7 +416,7 @@ class KMLGeometry: KMLElement {
     
     // Create (if necessary) and return the corresponding MKOverlayPathRenderer for
     // the MKShape object.
-    func createOverlayPathRenderer(shape: MKShape) -> MKOverlayPathRenderer? {
+    func createOverlayPathRenderer(_ shape: MKShape) -> MKOverlayPathRenderer? {
         return nil
     }
     
@@ -452,10 +452,10 @@ class KMLPoint: KMLGeometry {
 
 // A KMLPolygon element corresponds to an MKPolygon and MKPolygonView
 class KMLPolygon: KMLGeometry {
-    private var outerRing: String = ""
-    private var innerRings: [String] = []
+    fileprivate var outerRing: String = ""
+    fileprivate var innerRings: [String] = []
     
-    private struct PolyFlags: OptionSetType {
+    fileprivate struct PolyFlags: OptionSet {
         var rawValue: Int32
         init(rawValue: Int32) {self.rawValue = rawValue}
         
@@ -463,7 +463,7 @@ class KMLPolygon: KMLGeometry {
         static let inInnerBoundary = PolyFlags(rawValue: 1<<1)
         static let inLinearRing = PolyFlags(rawValue: 1<<2)
     }
-    private var polyFlags: PolyFlags = PolyFlags(rawValue: 0)
+    fileprivate var polyFlags: PolyFlags = PolyFlags(rawValue: 0)
     
     
     override var canAddString: Bool {
@@ -525,7 +525,7 @@ class KMLPolygon: KMLGeometry {
         return poly
     }
     
-    override func createOverlayPathRenderer(shape: MKShape) -> MKOverlayPathRenderer? {
+    override func createOverlayPathRenderer(_ shape: MKShape) -> MKOverlayPathRenderer? {
         let polyPath = MKPolygonRenderer(polygon: shape as! MKPolygon)
         return polyPath
     }
@@ -548,7 +548,7 @@ class KMLLineString: KMLGeometry {
         return MKPolyline(coordinates: &points, count: points.count)
     }
     
-    override func createOverlayPathRenderer(shape: MKShape) -> MKOverlayPathRenderer? {
+    override func createOverlayPathRenderer(_ shape: MKShape) -> MKOverlayPathRenderer? {
         let polyLine = MKPolylineRenderer(polyline: shape as! MKPolyline)
         return polyLine
     }
@@ -557,21 +557,21 @@ class KMLLineString: KMLGeometry {
 
 class KMLPlacemark: KMLElement {
     var style: KMLStyle?
-    private(set) var geometry: KMLGeometry?
+    fileprivate(set) var geometry: KMLGeometry?
     
     // Corresponds to the title property on MKAnnotation
-    private(set) var name: String?
+    fileprivate(set) var name: String?
     // Corresponds to the subtitle property on MKAnnotation
-    private(set) var placemarkDescription: String?
+    fileprivate(set) var placemarkDescription: String?
     
     var styleUrl: String?
     
-    private var mkShape: MKShape?
+    fileprivate var mkShape: MKShape?
     
-    private var _annotationView: MKAnnotationView?
-    private var _overlayPathRenderer: MKOverlayPathRenderer?
+    fileprivate var _annotationView: MKAnnotationView?
+    fileprivate var _overlayPathRenderer: MKOverlayPathRenderer?
     
-    struct Flags: OptionSetType {
+    struct Flags: OptionSet {
         var rawValue: Int32
         init(rawValue: Int32) {self.rawValue = rawValue}
         
@@ -584,10 +584,10 @@ class KMLPlacemark: KMLElement {
     var flags: Flags = Flags(rawValue: 0)
     
     override var canAddString: Bool {
-        return flags.intersect([.inName, .inStyleUrl, .inDescription]) != []
+        return flags.intersection([.inName, .inStyleUrl, .inDescription]) != []
     }
     
-    override func addString(str: String) {
+    override func addString(_ str: String) {
         if flags.contains(.inStyle) {
             style?.addString(str)
         } else if flags.contains(.inGeometry) {
@@ -627,7 +627,7 @@ class KMLPlacemark: KMLElement {
         self.clearString()
     }
     
-    func beginStyleWithIdentifier(ident: String?) {
+    func beginStyleWithIdentifier(_ ident: String?) {
         flags.insert(.inStyle)
         style = KMLStyle(identifier: ident)
     }
@@ -636,7 +636,7 @@ class KMLPlacemark: KMLElement {
         flags.remove(.inStyle)
     }
     
-    func beginGeometryOfType(elementName: String, withIdentifier ident: String?) {
+    func beginGeometryOfType(_ elementName: String, withIdentifier ident: String?) {
         flags.insert(.inGeometry)
         switch elementName {
         case ELTYPE("Point"):
@@ -658,7 +658,7 @@ class KMLPlacemark: KMLElement {
         return geometry as? KMLPolygon
     }
     
-    private func _createShape() {
+    fileprivate func _createShape() {
         if mkShape == nil {
             mkShape = geometry?.mapkitShape
             mkShape?.title = name
@@ -713,9 +713,9 @@ extension UIColor {
     
     // Parse a KML string based color into a UIColor.  KML colors are agbr hex encoded.
     convenience init(KMLString kmlColorString: String) {
-        let scanner = NSScanner(string: kmlColorString)
+        let scanner = Scanner(string: kmlColorString)
         var color: UInt32 = 0
-        scanner.scanHexInt(&color)
+        scanner.scanHexInt32(&color)
         
         let a = (color >> 24) & 0x000000FF
         let b = (color >> 16) & 0x000000FF

@@ -19,16 +19,16 @@ import MapKit
 class KMLViewerViewController: UIViewController, MKMapViewDelegate {
     
     
-    @IBOutlet private weak var map: MKMapView!
-    private var kmlParser: KMLParser!
+    @IBOutlet fileprivate weak var map: MKMapView!
+    fileprivate var kmlParser: KMLParser!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         // Locate the path to the   file in the application's bundle
         // and parse it with the KMLParser.
-        let url = NSBundle.mainBundle().URLForResource("KML_Sample", withExtension: "kml")!
-        self.kmlParser = KMLParser(URL: url)
+        let url = Bundle.main.url(forResource: "KML_Sample", withExtension: "kml")!
+        self.kmlParser = KMLParser(url: url)
         self.kmlParser.parseKML()
         
         // Add all of the MKOverlay objects parsed from the KML file to the map.
@@ -66,11 +66,11 @@ class KMLViewerViewController: UIViewController, MKMapViewDelegate {
     
     //MARK: MKMapViewDelegate
     
-    func mapView(mapView: MKMapView, rendererForOverlay overlay: MKOverlay) -> MKOverlayRenderer {
+    func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
         return self.kmlParser.rendererForOverlay(overlay)!
     }
     
-    func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         return self.kmlParser.viewForAnnotation(annotation)
     }
     
