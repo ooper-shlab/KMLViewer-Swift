@@ -19,8 +19,8 @@ import MapKit
 class KMLViewerViewController: UIViewController, MKMapViewDelegate {
     
     
-    @IBOutlet fileprivate weak var map: MKMapView!
-    fileprivate var kmlParser: KMLParser!
+    @IBOutlet private weak var map: MKMapView!
+    private var kmlParser: KMLParser!
     
     override func viewDidLoad() {
         super.viewDidLoad()

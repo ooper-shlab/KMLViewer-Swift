@@ -64,13 +64,13 @@ extension CLLocationCoordinate2D {
 
 
 class KMLParser: NSObject, XMLParserDelegate {
-    fileprivate var _styles: [String: KMLStyle] = [:]
-    fileprivate var _placemarks: [KMLPlacemark] = []
+    private var _styles: [String: KMLStyle] = [:]
+    private var _placemarks: [KMLPlacemark] = []
     
-    fileprivate var _placemark: KMLPlacemark?
-    fileprivate var _style: KMLStyle?
+    private var _placemark: KMLPlacemark?
+    private var _style: KMLStyle?
     
-    fileprivate var _xmlParser: XMLParser!
+    private var _xmlParser: XMLParser!
     
     // After parsing has completed, this method loops over all placemarks that have
     // been parsed and looks up their corresponding KMLStyle objects according to
@@ -294,14 +294,14 @@ class KMLElement: NSObject {
 // at the top level of the KML document with identifiers or they may be
 // specified anonymously within a Geometry element.
 class KMLStyle: KMLElement {
-    fileprivate var strokeColor: UIColor?
-    fileprivate var strokeWidth: CGFloat = 0.0
-    fileprivate var fillColor: UIColor?
+    private var strokeColor: UIColor?
+    private var strokeWidth: CGFloat = 0.0
+    private var fillColor: UIColor?
     
-    fileprivate var fill: Bool = false
-    fileprivate var stroke: Bool = false
+    private var fill: Bool = false
+    private var stroke: Bool = false
     
-    fileprivate struct Flags: OptionSet {
+    private struct Flags: OptionSet {
         var rawValue: Int32
         init(rawValue: Int32) {self.rawValue = rawValue}
         static let inLineStyle = Flags(rawValue: 1<<0)
@@ -312,7 +312,7 @@ class KMLStyle: KMLElement {
         static let inFill = Flags(rawValue: 1<<4)
         static let inOutline = Flags(rawValue: 1<<5)
     }
-    fileprivate var flags: Flags = Flags(rawValue: 0)
+    private var flags: Flags = Flags(rawValue: 0)
     
     override var canAddString: Bool {
         return flags.intersection([.inColor, .inWidth, .inFill, .inOutline]) != []
@@ -452,10 +452,10 @@ class KMLPoint: KMLGeometry {
 
 // A KMLPolygon element corresponds to an MKPolygon and MKPolygonView
 class KMLPolygon: KMLGeometry {
-    fileprivate var outerRing: String = ""
-    fileprivate var innerRings: [String] = []
+    private var outerRing: String = ""
+    private var innerRings: [String] = []
     
-    fileprivate struct PolyFlags: OptionSet {
+    private struct PolyFlags: OptionSet {
         var rawValue: Int32
         init(rawValue: Int32) {self.rawValue = rawValue}
         
@@ -463,7 +463,7 @@ class KMLPolygon: KMLGeometry {
         static let inInnerBoundary = PolyFlags(rawValue: 1<<1)
         static let inLinearRing = PolyFlags(rawValue: 1<<2)
     }
-    fileprivate var polyFlags: PolyFlags = PolyFlags(rawValue: 0)
+    private var polyFlags: PolyFlags = PolyFlags(rawValue: 0)
     
     
     override var canAddString: Bool {
@@ -507,13 +507,9 @@ class KMLPolygon: KMLGeometry {
         // do we lazily transform them into CLLocationCoordinate2D arrays.
         
         // First build up a list of MKPolygon cutouts for the interior rings.
-        var innerPolys: [MKPolygon] = []
-        if !innerRings.isEmpty {
-            innerPolys.reserveCapacity(innerPolys.count)
-            for coordStr in innerRings {
-                var coords = CLLocationCoordinate2D.strToCoords(coordStr)
-                innerPolys.append(MKPolygon(coordinates: &coords, count: coords.count))
-            }
+        let innerPolys: [MKPolygon] = innerRings.map {coordStr in
+            var coords = CLLocationCoordinate2D.strToCoords(coordStr)
+            return MKPolygon(coordinates: &coords, count: coords.count)
         }
         // Now parse the outer ring.
         
@@ -557,19 +553,19 @@ class KMLLineString: KMLGeometry {
 
 class KMLPlacemark: KMLElement {
     var style: KMLStyle?
-    fileprivate(set) var geometry: KMLGeometry?
+    private(set) var geometry: KMLGeometry?
     
     // Corresponds to the title property on MKAnnotation
-    fileprivate(set) var name: String?
+    private(set) var name: String?
     // Corresponds to the subtitle property on MKAnnotation
-    fileprivate(set) var placemarkDescription: String?
+    private(set) var placemarkDescription: String?
     
     var styleUrl: String?
     
-    fileprivate var mkShape: MKShape?
+    private var mkShape: MKShape?
     
-    fileprivate var _annotationView: MKAnnotationView?
-    fileprivate var _overlayPathRenderer: MKOverlayPathRenderer?
+    private var _annotationView: MKAnnotationView?
+    private var _overlayPathRenderer: MKOverlayPathRenderer?
     
     struct Flags: OptionSet {
         var rawValue: Int32
@@ -658,7 +654,7 @@ class KMLPlacemark: KMLElement {
         return geometry as? KMLPolygon
     }
     
-    fileprivate func _createShape() {
+    private func _createShape() {
         if mkShape == nil {
             mkShape = geometry?.mapkitShape
             mkShape?.title = name
