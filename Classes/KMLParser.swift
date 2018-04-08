@@ -79,7 +79,7 @@ class KMLParser: NSObject, XMLParserDelegate {
         for placemark in _placemarks {
             if placemark.style == nil, let styleUrl = placemark.styleUrl {
                 if styleUrl.hasPrefix("#") {
-                    let styleID = styleUrl.substring(from: styleUrl.characters.index(styleUrl.startIndex, offsetBy: 1))
+                    let styleID = String(styleUrl.dropFirst(1))
                     let style = _styles[styleID]
                     placemark.style = style
                 }
@@ -103,13 +103,13 @@ class KMLParser: NSObject, XMLParserDelegate {
     // Return the list of KMLPlacemarks from the object graph that contain overlays
     // (as opposed to simply point annotations).
     var overlays: [MKOverlay] {
-        return _placemarks.flatMap{$0.overlay}
+        return _placemarks.compactMap{$0.overlay}
     }
     
     // Return the list of KMLPlacemarks from the object graph that are simply
     // MKPointAnnotations and are not MKOverlays.
     var points: [MKAnnotation] {
-        return _placemarks.flatMap{$0.point}
+        return _placemarks.compactMap{$0.point}
     }
     
     func viewForAnnotation(_ point: MKAnnotation) -> MKAnnotationView? {
