@@ -41,22 +41,22 @@ class KMLViewerViewController: UIViewController, MKMapViewDelegate {
         
         // Walk the list of overlays and annotations and create a MKMapRect that
         // bounds all of them and store it into flyTo.
-        var flyTo = MKMapRectNull
+        var flyTo = MKMapRect.null
         for overlay in overlays {
-            if MKMapRectIsNull(flyTo) {
+            if flyTo.isNull {
                 flyTo = overlay.boundingMapRect
             } else {
-                flyTo = MKMapRectUnion(flyTo, overlay.boundingMapRect)
+                flyTo = flyTo.union(overlay.boundingMapRect)
             }
         }
         
         for annotation in annotations {
-            let annotationPoint = MKMapPointForCoordinate(annotation.coordinate)
-            let pointRect = MKMapRectMake(annotationPoint.x, annotationPoint.y, 0, 0)
-            if MKMapRectIsNull(flyTo) {
+            let annotationPoint = MKMapPoint(annotation.coordinate)
+            let pointRect = MKMapRect(x: annotationPoint.x, y: annotationPoint.y, width: 0, height: 0)
+            if flyTo.isNull {
                 flyTo = pointRect
             } else {
-                flyTo = MKMapRectUnion(flyTo, pointRect)
+                flyTo = flyTo.union(pointRect)
             }
         }
         
